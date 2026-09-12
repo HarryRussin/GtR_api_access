@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UKRI GtR-2 Data Extraction &amp; Portfolio Analysis Tool</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            color: #111;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #bbb;
+            padding: 16px;
+        }
+        h1 {
+            font-size: 18px;
+            margin: 0 0 4px 0;
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 6px;
+        }
+        .meta-header {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 12px;
+        }
+        fieldset {
+            border: 1px solid #bbb;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+        legend {
+            font-weight: bold;
+            font-size: 12px;
+            color: #333;
+            padding: 0 4px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            align-items: end;
+        }
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 3px;
+            color: #222;
+        }
+        .sub-label {
+            font-weight: normal;
+            font-size: 10px;
+            color: #666;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #888;
+            padding: 4px 5px;
+            font-size: 12px;
+            background: #fff;
+        }
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 4px;
+        }
+        button {
+            border: 1px solid #444;
+            background: #e6e6e6;
+            color: #000;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: normal;
+        }
+        button:hover {
+            background: #d4d4d4;
+        }
+        button:active {
+            background: #ccc;
+        }
+        button.btn-primary {
+            background: #003366;
+            color: #fff;
+            border-color: #002244;
+            font-weight: bold;
+        }
+        button.btn-primary:hover {
+            background: #002244;
+        }
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        .toggle-group label {
+            font-weight: normal;
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        #status-strip {
+            font-family: monospace;
+            font-size: 11px;
+            padding: 6px 8px;
+            background: #eee;
+            border: 1px solid #ccc;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .badge-filtered {
+            background: #003366;
+            color: #fff;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+        }
+        .kpi-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+        .kpi-table th, .kpi-table td {
+            border: 1px solid #ccc;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        .kpi-table th {
+            background: #eaeff5;
+            font-size: 11px;
+            color: #333;
+            width: 33.3%;
+        }
+        .kpi-table td {
+            font-size: 16px;
+            font-weight: bold;
+            color: #003366;
+            font-family: Arial, sans-serif;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .chart-box {
+            border: 1px solid #ccc;
+            background: #fff;
+            padding: 6px;
+        }
+        .table-wrap {
+            max-height: 380px;
+            overflow: auto;
+            border: 1px solid #ccc;
+            margin-bottom: 12px;
+        }
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        table.data-table th {
+            position: sticky;
+            top: 0;
+            background: #eaeff5;
+            border-bottom: 2px solid #999;
+            border-right: 1px solid #ccc;
+            padding: 5px 6px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        table.data-table td {
+            border-bottom: 1px solid #ddd;
+            border-right: 1px solid #eee;
+            padding: 4px 6px;
+            white-space: nowrap;
+        }
+        table.data-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        table.data-table tr:hover {
+            background: #ffffe0;
+        }
+        .mono {
+            font-family: monospace;
+            font-size: 11px;
+        }
+        details {
+            border: 1px solid #ccc;
+            background: #fafafa;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        details summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #333;
+        }
+        textarea.log-view {
+            width: 100%;
+            height: 140px;
+            box-sizing: border-box;
+            margin-top: 6px;
+            font-family: monospace;
+            font-size: 11px;
+            background: #fff;
+            border: 1px solid #999;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>UK Research &amp; Innovation (UKRI) Gateway to Research Extractor</h1>
+    <div class="meta-header">
+        GtR-2 API Gateway Query Interface | Endpoint target: <code>gtr.ukri.org/gtr/api</code> | Output format: RFC 4180 CSV
+    </div>
+
+    <!-- Query Parameters -->
+    <fieldset>
+        <legend>Query Specification</legend>
+        <div class="form-grid">
+            <div>
+                <label for="keyword">Search String / Keyword</label>
+                <input type="text" id="keyword" value="mmWave">
+            </div>
+            <div>
+                <label for="apiScope">GtR Field Restriction</label>
+                <select id="apiScope">
+                    <option value="all">None (All Indexed Fields)</option>
+                    <option value="pro.t">Title Field Only (pro.t)</option>
+                    <option value="pro.a">Abstract Field Only (pro.a)</option>
+                </select>
+            </div>
+            <div>
+                <label>Filter Window (Calendar Year) <span class="sub-label">[Live In-Place Filter]</span></label>
+                <div style="display: flex; gap: 4px;">
+                    <input type="number" id="startYear" value="2016" oninput="applyDateFilter()" onchange="applyDateFilter()">
+                    <input type="number" id="endYear" value="2026" oninput="applyDateFilter()" onchange="applyDateFilter()">
+                </div>
+            </div>
+            <div>
+                <button type="button" class="btn-primary" onclick="runApp()" style="width: 100%; height: 26px;">Query API</button>
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- Calculation Settings & Export -->
+    <fieldset>
+        <legend>Dataset Operations</legend>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div class="toggle-group">
+                <span style="font-weight: bold; font-size: 11px; margin-right: 6px;">Expenditure Accounting Model:</span>
+                <input type="radio" id="modeCommitted" name="accountingMode" value="committed" checked onchange="setFundingMode('committed')">
+                <label for="modeCommitted">Committed Total (Start Year)</label>
+                <input type="radio" id="modeAnnualized" name="accountingMode" value="annualized" onchange="setFundingMode('annualized')" style="margin-left: 10px;">
+                <label for="modeAnnualized">Linear Multi-Year Distribution</label>
+            </div>
+            <div class="btn-row">
+                <button type="button" id="csvBtn" onclick="downloadCSV()" disabled>Export Filtered CSV</button>
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- Status Strip -->
+    <div id="status-strip">
+        <span id="statusMsg">Status: Standby. Ready for query execution.</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="recordTally">Records Loaded: 0 | Displayed: 0</span>
+            <span id="filterBadge" class="badge-filtered" style="display: none;">DATE FILTERED</span>
+        </div>
+    </div>
+
+    <!-- KPI Summary Grid -->
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th id="lblKpiCount">Matching Grant Allocations (Filtered Window)</th>
+                <th id="lblKpiValue">Aggregate Financial Commitment (Filtered Window)</th>
+                <th id="lblKpiAvg">Mean Value per Grant (Filtered Window)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="kpiCount">0</td>
+                <td id="kpiValue">£0</td>
+                <td id="kpiAvg">£0</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Figures -->
+    <div class="charts-container">
+        <div class="chart-box">
+            <div id="chartValue" style="height: 260px;"></div>
+        </div>
+        <div class="chart-box">
+            <div id="chartCount" style="height: 260px;"></div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div id="tableHeading" style="font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #333;">
+        Tabulated Grant Records (Filtered Subset, Top 100 Rows Displayed)
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Grant Reference</th>
+                    <th>Project Title</th>
+                    <th>Lead Research Organisation</th>
+                    <th>Gross Value (£)</th>
+                    <th>Annualized (£/yr)</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #777; padding: 14px;">No records loaded. Execute query above.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Diagnostics / Verification Log -->
+    <details>
+        <summary>System Diagnostics &amp; CSV Serialization Log</summary>
+        <div style="margin-top: 6px;">
+            <button type="button" onclick="copyDebugLog()" style="font-size: 11px;">Copy Diagnostic Log</button>
+        </div>
+        <textarea id="debugTextarea" class="log-view" readonly placeholder="System log output will appear here after query execution."></textarea>
+    </details>
+</div>
+
+<script>
+    const HEADERS_V7 = { "Accept": "application/vnd.rcuk.gtr.json-v7" };
+    let allFetchedProjects = []; // Cached master dataset from API
+    let globalData = [];         // In-memory date-filtered subset currently displayed
+    let currentFundingMode = 'committed';
+
+    const GTR_PROJECT_TAGS = [
+        'links', 'ext', 'id', 'outcomeid', 'href', 'created', 'updated', 
+        'identifiers', 'title', 'status', 'grantCategory', 'leadFunder', 
+        'leadOrganisationDepartment', 'abstractText', 'techAbstractText', 
+        'potentialImpact', 'healthCategories', 'researchActivities', 
+        'researchSubjects', 'researchTopics', 'rcukProgrammes', 'start', 
+        'end', 'participantValues'
+    ];
+
+    const RESEARCH_TAG_KEYS = [
+        'researchTopics', 'researchSubjects', 'healthCategories', 
+        'researchActivities', 'rcukProgrammes'
+    ];
+
+    function setFundingMode(mode) {
+        currentFundingMode = mode;
+        if (allFetchedProjects.length > 0) {
+            applyDateFilter();
+        }
+    }
+
+    function applyDateFilter() {
+        if (!allFetchedProjects || allFetchedProjects.length === 0) return;
+
+        let startYr = parseInt(document.getElementById('startYear').value);
+        let endYr = parseInt(document.getElementById('endYear').value);
+
+        if (isNaN(startYr) || isNaN(endYr)) return;
+        if (startYr > endYr) {
+            let tmp = startYr;
+            startYr = endYr;
+            endYr = tmp;
+        }
+
+        // Apply date-window filter in place across cached objects
+        globalData = allFetchedProjects.filter(p => p.startYearNum <= endYr && p.endYearNum >= startYr);
+
+        updateDashboard(globalData);
+        generateDebugReport(globalData);
+
+        // Update status readout indicating post-filtered sample size
+        document.getElementById('recordTally').innerText = 
+            `Displaying: ${globalData.length} of ${allFetchedProjects.length} fetched (${startYr}–${endYr})`;
+        document.getElementById('filterBadge').style.display = 'inline-block';
+        document.getElementById('filterBadge').innerText = `FILTERED: ${startYr}–${endYr}`;
+        document.getElementById('tableHeading').innerText = 
+            `Tabulated Grant Records (${startYr}–${endYr} Window: ${globalData.length} matching grants, Top 100 Displayed)`;
+    }
+
+    function formatClassification(val) {
+        if (!val) return "";
+        let list = [];
+        if (Array.isArray(val)) {
+            list = val;
+        } else if (typeof val === 'object') {
+            for (let key in val) {
+                let inner = val[key];
+                if (Array.isArray(inner)) {
+                    list.push(...inner);
+                } else if (inner && typeof inner === 'object') {
+                    list.push(inner);
+                }
+            }
+            if (list.length === 0 && (val.text || val.name || val.encodedText)) {
+                list.push(val);
+            }
+        }
+        return list.map(item => {
+            if (!item) return "";
+            let name = item.text || item.name || item.encodedText || "";
+            let pct = item.percentage ? ` (${item.percentage}%)` : "";
+            return name ? `${name}${pct}` : "";
+        }).filter(Boolean).join("; ");
+    }
+
+    function formatIsoDate(timestamp) {
+        if (!timestamp) return "";
+        let num = Number(timestamp);
+        if (!isNaN(num) && num > 0) {
+            let d = new Date(num);
+            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+        }
+        return "";
+    }
+
+    function parseYear(timestamp) {
+        if (!timestamp) return null;
+        let num = Number(timestamp);
+        if (!isNaN(num) && num > 0) {
+            let yr = new Date(num).getFullYear();
+            if (yr > 1980 && yr < 2035) return yr;
+        }
+        return null;
+    }
+
+    function extractCleanIdentifiers(p) {
+        if (p.grantReference) return p.grantReference;
+        let idents = p.identifiers;
+        if (!idents) return "";
+        let arr = [];
+        if (Array.isArray(idents)) arr = idents;
+        else if (idents.identifier) {
+            arr = Array.isArray(idents.identifier) ? idents.identifier : [idents.identifier];
+        }
+        let rcuk = arr.find(i => i.type === 'RCUK');
+        if (rcuk && rcuk.value) return rcuk.value;
+        return arr.map(i => i.value || "").filter(Boolean).join("; ") || (typeof idents === 'object' ? JSON.stringify(idents) : String(idents));
+    }
+
+    async function fetchPage(query, page) {
+        let url = `https://gtr.ukri.org/gtr/api/projects?q=${encodeURIComponent(query)}&p=${page}&s=100`;
+        let res = await fetch(url, { headers: HEADERS_V7 });
+        if (!res.ok) throw new Error("HTTP request rejected: " + res.status);
+        return await res.json();
+    }
+
+    async function enrichProjects(projects) {
+        const BATCH_SIZE = 6;
+        for (let i = 0; i < projects.length; i += BATCH_SIZE) {
+            let batch = projects.slice(i, i + BATCH_SIZE);
+            document.getElementById('statusMsg').innerText = `Status: Interrogating fund/organisation sub-endpoints (${Math.min(i + BATCH_SIZE, projects.length)}/${projects.length})...`;
+
+            await Promise.all(batch.map(async (p) => {
+                p.awardAmount = 0.0;
+                p.leadOrgName = "Unknown";
+                let detectedStart = p.start || null;
+                let detectedEnd = p.end || null;
+
+                let links = p.links?.link || [];
+                if (!Array.isArray(links)) links = [links];
+                for (let l of links) {
+                    if (l && l.rel === "FUND") {
+                        if (!detectedStart && l.start) detectedStart = l.start;
+                        if (!detectedEnd && l.end) detectedEnd = l.end;
+                    }
+                }
+
+                try {
+                    let fRes = await fetch(`https://gtr.ukri.org/gtr/api/projects/${p.id}/funds`, { headers: HEADERS_V7 });
+                    if (fRes.ok) {
+                        let fData = await fRes.json();
+                        let funds = fData.fund || [];
+                        if (!Array.isArray(funds)) funds = [funds];
+                        funds.forEach(f => {
+                            if (f) {
+                                let val = f.valuePounds;
+                                if (typeof val === 'object' && val !== null) {
+                                    p.awardAmount += parseFloat(val.amount || 0);
+                                } else if (val) {
+                                    p.awardAmount += parseFloat(val || 0);
+                                }
+                                if (!detectedStart && f.start) detectedStart = f.start;
+                                if (!detectedEnd && f.end) detectedEnd = f.end;
+                            }
+                        });
+                    }
+                } catch (e) {}
+
+                try {
+                    let oRes = await fetch(`https://gtr.ukri.org/gtr/api/projects/${p.id}/organisations`, { headers: HEADERS_V7 });
+                    if (oRes.ok) {
+                        let oData = await oRes.json();
+                        let orgs = oData.organisation || [];
+                        if (!Array.isArray(orgs)) orgs = [orgs];
+                        if (orgs.length > 0 && orgs[0].name) {
+                            p.leadOrgName = orgs[0].name;
+                        }
+                    }
+                } catch (e) {}
+
+                p.startDateFormatted = formatIsoDate(detectedStart);
+                p.endDateFormatted = formatIsoDate(detectedEnd);
+                p.startYearNum = parseYear(detectedStart) || parseYear(p.start) || parseYear(p.created) || 2026;
+                p.endYearNum = parseYear(detectedEnd) || parseYear(p.end) || p.startYearNum;
+                if (p.endYearNum < p.startYearNum) p.endYearNum = p.startYearNum;
+
+                p.Year = p.startYearNum;
+                let duration = Math.max(1, p.endYearNum - p.startYearNum + 1);
+                p.annualizedAmount = p.awardAmount / duration;
+            }));
+        }
+        return projects;
+    }
+
+    async function runApp() {
+        document.getElementById('csvBtn').disabled = true;
+        let keyword = document.getElementById('keyword').value.trim();
+        let scope = document.getElementById('apiScope').value;
+
+        let apiQuery = scope === "all" ? keyword : `${scope}:${keyword}`;
+        let rawProjects = [];
+
+        try {
+            document.getElementById('statusMsg').innerText = "Status: Transmitting GtR-2 API query...";
+            let firstPage = await fetchPage(apiQuery, 1);
+            let projects = firstPage.project || [];
+            rawProjects = rawProjects.concat(Array.isArray(projects) ? projects : [projects]);
+
+            let totalPages = firstPage.totalPages || 1;
+            for (let i = 2; i <= Math.min(totalPages, 5); i++) {
+                document.getElementById('statusMsg').innerText = `Status: Fetching pagination index ${i}/${totalPages}...`;
+                let pData = await fetchPage(apiQuery, i);
+                let p = pData.project || [];
+                rawProjects = rawProjects.concat(Array.isArray(p) ? p : [p]);
+            }
+
+            // Cache entire enriched dataset in memory
+            allFetchedProjects = await enrichProjects(rawProjects);
+
+            // Execute in-place date filtering against loaded cache
+            applyDateFilter();
+
+            document.getElementById('statusMsg').innerText = `Status: Query completed. In-memory cache loaded.`;
+            document.getElementById('csvBtn').disabled = false;
+        } catch (error) {
+            document.getElementById('statusMsg').innerText = `Status: Error encountered (${error.message}). Check connectivity.`;
+        }
+    }
+
+    function updateDashboard(data) {
+        let startYr = parseInt(document.getElementById('startYear').value);
+        let endYr = parseInt(document.getElementById('endYear').value);
+
+        let yearly = {};
+        for (let y = startYr; y <= endYr; y++) {
+            yearly[y] = { count: 0, val: 0 };
+        }
+
+        if (currentFundingMode === 'committed') {
+            document.getElementById('lblKpiCount').innerText = `New Grants Awarded (${startYr}–${endYr})`;
+            document.getElementById('lblKpiValue').innerText = `Gross Investment Committed (${startYr}–${endYr})`;
+            document.getElementById('lblKpiAvg').innerText = `Mean Value per Grant (${startYr}–${endYr})`;
+
+            let awarded = data.filter(p => p.startYearNum >= startYr && p.startYearNum <= endYr);
+            let gross = awarded.reduce((sum, p) => sum + p.awardAmount, 0);
+
+            awarded.forEach(p => {
+                if (yearly[p.startYearNum]) {
+                    yearly[p.startYearNum].count += 1;
+                    yearly[p.startYearNum].val += p.awardAmount;
+                }
+            });
+
+            document.getElementById('kpiCount').innerText = awarded.length;
+            document.getElementById('kpiValue').innerText = "£" + Math.round(gross).toLocaleString();
+            document.getElementById('kpiAvg').innerText = "£" + Math.round(awarded.length ? gross / awarded.length : 0).toLocaleString();
+
+            renderScientificCharts(yearly, `Capital Allocated (£) by Start Year (${startYr}–${endYr})`, `Grant Allocations Initiated (${startYr}–${endYr})`, "#1f497d");
+        } else {
+            document.getElementById('lblKpiCount').innerText = `Active Grants in Window (${startYr}–${endYr})`;
+            document.getElementById('lblKpiValue').innerText = `Cumulative Linear Spend (${startYr}–${endYr})`;
+            document.getElementById('lblKpiAvg').innerText = `Mean Annual Spend in Window (${startYr}–${endYr})`;
+
+            let totalSpend = 0;
+            data.forEach(p => {
+                let s = Math.max(p.startYearNum, startYr);
+                let e = Math.min(p.endYearNum, endYr);
+                for (let y = s; y <= e; y++) {
+                    yearly[y].val += p.annualizedAmount;
+                    yearly[y].count += 1;
+                    totalSpend += p.annualizedAmount;
+                }
+            });
+
+            let nYears = Math.max(1, endYr - startYr + 1);
+            document.getElementById('kpiCount').innerText = data.length;
+            document.getElementById('kpiValue').innerText = "£" + Math.round(totalSpend).toLocaleString();
+            document.getElementById('kpiAvg').innerText = "£" + Math.round(totalSpend / nYears).toLocaleString();
+
+            renderScientificCharts(yearly, `Estimated Linear Spend (£/yr) (${startYr}–${endYr})`, `Concurrent Active Grants (${startYr}–${endYr})`, "#336666");
+        }
+
+        renderTable(data);
+    }
+
+    function renderScientificCharts(yearly, valTitle, countTitle, barColor) {
+        let years = Object.keys(yearly).sort((a, b) => Number(a) - Number(b));
+        let counts = years.map(y => yearly[y].count);
+        let values = years.map(y => yearly[y].val);
+
+        let layoutBase = {
+            font: { family: "Arial, sans-serif", size: 10, color: "#111" },
+            plot_bgcolor: "#ffffff",
+            paper_bgcolor: "#ffffff",
+            margin: { t: 28, r: 16, b: 34, l: 56 },
+            xaxis: {
+                tickmode: 'linear',
+                tickformat: 'd',
+                linecolor: '#888',
+                linewidth: 1,
+                mirror: true,
+                gridcolor: '#eee'
+            },
+            yaxis: {
+                linecolor: '#888',
+                linewidth: 1,
+                mirror: true,
+                gridcolor: '#eee'
+            }
+        };
+
+        Plotly.newPlot('chartValue', [{
+            x: years,
+            y: values,
+            type: 'bar',
+            marker: { color: barColor, line: { color: '#000', width: 0.5 } }
+        }], Object.assign({}, layoutBase, {
+            title: { text: valTitle, font: { size: 11, color: '#003366' } },
+            yaxis: Object.assign({}, layoutBase.yaxis, { tickprefix: "£" })
+        }), { displayModeBar: false });
+
+        Plotly.newPlot('chartCount', [{
+            x: years,
+            y: counts,
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: '#8b0000', width: 1.5 },
+            marker: { size: 5, color: '#8b0000' }
+        }], Object.assign({}, layoutBase, {
+            title: { text: countTitle, font: { size: 11, color: '#003366' } }
+        }), { displayModeBar: false });
+    }
+
+    function renderTable(data) {
+        let tbody = document.getElementById('tableBody');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:14px;">No matching records within specified window. Adjust year inputs above.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.slice(0, 100).map(p => `
+            <tr>
+                <td>${p.startYearNum}</td>
+                <td>${p.endYearNum}</td>
+                <td class="mono">${extractCleanIdentifiers(p)}</td>
+                <td title="${(p.title || '').replace(/"/g, '&quot;')}">${(p.title || '').substring(0, 52)}${p.title && p.title.length > 52 ? '...' : ''}</td>
+                <td title="${p.leadOrgName}">${p.leadOrgName.substring(0, 32)}${p.leadOrgName.length > 32 ? '...' : ''}</td>
+                <td style="text-align:right;">£${Math.round(p.awardAmount).toLocaleString()}</td>
+                <td style="text-align:right; color:#003366;">£${Math.round(p.annualizedAmount).toLocaleString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    function getFormattedCsvValue(project, colName) {
+        if (colName === 'Year') return project.Year;
+        if (colName === 'Award Amount (£)') return Math.round(project.awardAmount);
+        if (colName === 'Annualized Spend (£/yr)') return Math.round(project.annualizedAmount);
+        if (colName === 'Lead Organisation') return project.leadOrgName;
+        if (colName === 'start') return project.startDateFormatted || "";
+        if (colName === 'end') return project.endDateFormatted || "";
+        if (colName === 'identifiers') return extractCleanIdentifiers(project);
+        if (RESEARCH_TAG_KEYS.includes(colName)) {
+            return formatClassification(project[colName]);
+        }
+        let val = project[colName];
+        if (typeof val === 'object' && val !== null) {
+            return JSON.stringify(val);
+        }
+        return val !== undefined && val !== null ? String(val) : "";
+    }
+
+    function generateDebugReport(data) {
+        if (!data || data.length === 0) return;
+
+        let priorityCols = ['Year', 'Award Amount (£)', 'Annualized Spend (£/yr)', 'Lead Organisation', 'start', 'end', 'identifiers'];
+        let remainingTags = GTR_PROJECT_TAGS.filter(t => !priorityCols.includes(t));
+        let allCsvCols = [...priorityCols, ...remainingTags];
+
+        let startYr = document.getElementById('startYear').value;
+        let endYr = document.getElementById('endYear').value;
+
+        let lines = [];
+        lines.push(`GTR-2 EXTRACTION LOG & SERIALIZATION VERIFICATION`);
+        lines.push(`Execution Timestamp: ${new Date().toISOString()}`);
+        lines.push(`Active Filter Window: ${startYr}–${endYr}`);
+        lines.push(`Total Retrieved from API: ${allFetchedProjects.length}`);
+        lines.push(`Subset Matching Active Window: ${data.length}`);
+        lines.push(`Total Target Tag Columns: ${allCsvCols.length}\n`);
+
+        lines.push(`[FIELD POPULATION METRICS (FILTERED SUBSET)]`);
+        allCsvCols.forEach(col => {
+            let populated = 0;
+            data.forEach(p => {
+                let v = getFormattedCsvValue(p, col);
+                if (v !== "" && v !== null && v !== undefined && v !== 0 && v !== "0") populated++;
+            });
+            let pct = ((populated / data.length) * 100).toFixed(1);
+            lines.push(`${col.padEnd(28)} : ${String(populated).padStart(3, ' ')} / ${data.length} (${pct}%)`);
+        });
+
+        document.getElementById('debugTextarea').value = lines.join("\n");
+    }
+
+    function copyDebugLog() {
+        let txt = document.getElementById('debugTextarea').value;
+        navigator.clipboard.writeText(txt).then(() => {
+            alert("Diagnostic log copied to system clipboard.");
+        });
+    }
+
+    function downloadCSV() {
+        if (!globalData.length) return;
+
+        let priorityCols = ['Year', 'Award Amount (£)', 'Annualized Spend (£/yr)', 'Lead Organisation', 'start', 'end', 'identifiers'];
+        let remainingTags = GTR_PROJECT_TAGS.filter(t => !priorityCols.includes(t));
+        let allCsvCols = [...priorityCols, ...remainingTags];
+
+        let csvRows = [allCsvCols.join(",")];
+
+        globalData.forEach(p => {
+            let row = allCsvCols.map(col => {
+                let val = getFormattedCsvValue(p, col);
+                let clean = val !== undefined && val !== null 
+                    ? String(val).replace(/[\r\n\t]+/g, ' ').replace(/"/g, '""').trim() 
+                    : "";
+                return `"${clean}"`;
+            });
+            csvRows.push(row.join(","));
+        });
+
+        let startYr = document.getElementById('startYear').value;
+        let endYr = document.getElementById('endYear').value;
+        let kw = document.getElementById('keyword').value.replace(/[^a-zA-Z0-9]/g, '_');
+
+        let blob = new Blob([csvRows.join("\r\n")], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `gtr_extract_${kw}_${startYr}_${endYr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+</script>
+</body>
+</html>
